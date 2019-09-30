@@ -15,10 +15,10 @@ void error(const char *msg)
 	exit(0);
 }
 
-void recv_file(int socket_fd, char *file_name, int file_size)
+void recv_file(int socket_fd, char *file_name, char *buff)
 {
 	FILE* received_file = fopen(file_name, "w");
-	char buffer[2000] = {0};
+	puts(file_name);
         if (received_file == NULL)
         {
                 fprintf(stderr, "Failed to open file foo --> %s\n", strerror(errno));
@@ -26,19 +26,9 @@ void recv_file(int socket_fd, char *file_name, int file_size)
                 exit(EXIT_FAILURE);
         }
 
-        int remain_data = file_size;
-	int len ;
-	int n = read(socket_fd, buffer, 255);
-	printf("len read : %d with buffer %s\n", n, buffer);
-	return 0;
-
-        while ((remain_data > 0) && ((len = recv(socket_fd, buffer, 2000, 0)) > 0))
-        {
-                //fwrite(buffer, sizeof(char), len, received_file);
-		puts(buffer);
-                remain_data -= len;
-                fprintf(stdout, "Receive %d bytes and we hope :- %d bytes\n", len, remain_data);
-	}
+	printf("buffer is %s\n", buff);
+	fputs(buff, received_file);
+	fclose(received_file);
 
 }
 int main(int argc, char *argv[])
@@ -47,7 +37,7 @@ int main(int argc, char *argv[])
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
 
-	char buffer[256];
+	char buffer[2000];
 	if (argc < 3)
 	{
 		fprintf(stderr, "usage %s hostname port\n",argv[0]);
@@ -74,27 +64,29 @@ int main(int argc, char *argv[])
 		}
 		while(1)
 		{
-			bzero(buffer, 255);
-			fgets(buffer, 255, stdin);
+			bzero(buffer, 2000);
+			fgets(buffer, 2000, stdin);
 			n = write(sockfd, buffer, strlen(buffer));
 			if (n < 0)
 			{
 				error("Error on writing");
 			}
-			bzero(buffer, 255);
-			n = read(sockfd, buffer, 255);
+			bzero(buffer, 2000);
+			n = read(sockfd, buffer, 2000);
 		if( strncmp(buffer, "/system", strlen("/system")) == 0)
 		{
 		          puts("gui file");
 		          char file_name[100] = {0} ;
+					char *content = NULL;
 		          char command[100];
 			  int file_size ;
 		
-		          sscanf(buffer,"%s %s %d",command, file_name, &file_size);
-		          printf("command is %s , file name is %s, file size is %d\n", command, file_name, file_size);
-		
-				printf("Server: %s", buffer);
-			  recv_file(sockfd , file_name, file_size);
+		     sscanf(buffer,"%s %s",command, file_name);
+			 content = buffer + strlen(command) + strlen(file_name) + 1;
+			//printf("command : %s\n", command);
+			//printf("file_name : %s\n", file_name);
+			 recv_file(sockfd, file_name, content);
+			 	
 		}
 
 			if (n < 0)
@@ -105,6 +97,7 @@ int main(int argc, char *argv[])
 			int i = strncmp("Bye", buffer, 3);
 			if (0 == i)
 				break;
+
 		}
 
 	close(sockfd);
