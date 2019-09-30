@@ -20,6 +20,7 @@ int my_send_file(int socket_fd, char *FILE_TO_SEND, char *command )
 {
 	int fd;
 	char file_size[256];
+    char buff[1000] = {0};
 	int sent_bytes = 0;
         struct stat file_stat;
 
@@ -48,32 +49,16 @@ int my_send_file(int socket_fd, char *FILE_TO_SEND, char *command )
 
         /* Sending file size */
 
-	char command_send[1000] = {0};
+	char command_send[2000] = {0};
+		read(fd, buff, 1000);
 
-	sprintf(command_send, "%s %d", command,file_stat.st_size);
-	printf("command_send %s\n" , command_send);
+	sprintf(command_send, "%s %s", command,buff);
+		puts(buff);
+		write(socket_fd, command_send, 2000);
 
-        int len = send(socket_fd,command_send , sizeof(command_send), 0);
-
-        if (len < 0)
-        {
-              fprintf(stderr, "Error on sending greetings --> %s", strerror(errno));
-
-              exit(EXIT_FAILURE);
-        }
-
-        fprintf(stdout, "Server sent %d bytes for the size\n", len);
-
-        int offset = 0;
-        int remain_data = file_stat.st_size;
 
         /* Sending file data */
-        while (((sent_bytes = sendfile(socket_fd, fd, &offset, BUFSIZ)) > 0) && (remain_data > 0))
-        {
-                fprintf(stdout, "1. Server sent %d bytes from file's data, offset is now : %d and remaining data = %d\n", sent_bytes, offset, remain_data);
-                remain_data -= sent_bytes;
-
-        }
+		return 0;
 
 
 }
@@ -133,12 +118,13 @@ int main(int argc, char *argv[])
 
 		int f = 0;
 
+		printf("print each element in buffer : \n");
 		for (f = 0; f< strlen(buffer) ; f++)
 		{
 			putc(buffer[f], stdout);
 		}
 
-		if( strncmp(buffer, "/system", strlen("/system")) == 0)
+		if( strncmp(buffer, "/system", strlen("/system")  ) == 0)
 		{
 			puts("gui file");
 			char file_name[100] = {0} ;
